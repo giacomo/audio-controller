@@ -43,7 +43,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: vitest-report
-          path: ./coverage || .
+          path: ./coverage
 
   integration:
     name: Integration tests (linux)
