@@ -23,14 +23,25 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile || yarn install
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          yarn install --frozen-lockfile || yarn install
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: yarn install
 
       - name: Install audio utilities on Ubuntu
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          # Install pulseaudio-utils (pactl) and alsa-utils (amixer). pipewire-utils may also be available.
-          sudo apt-get install -y pulseaudio-utils alsa-utils pipewire-utils || true
+          # Install pulseaudio-utils (pactl) and alsa-utils (amixer). Attempt pipewire-bin (pw-cli) optionally.
+          # Install each package separately so one missing package doesn't fail the whole command.
+          sudo apt-get install -y pulseaudio-utils || true
+          sudo apt-get install -y alsa-utils || true
+          sudo apt-get install -y pipewire-bin || true
 
       - name: Build
         run: yarn build
@@ -61,10 +72,15 @@ jobs:
       - name: Install audio utilities
         run: |
           sudo apt-get update
-          sudo apt-get install -y pulseaudio-utils alsa-utils pipewire-utils || true
+          # Install each package separately so one missing package doesn't fail the whole command.
+          sudo apt-get install -y pulseaudio-utils || true
+          sudo apt-get install -y alsa-utils || true
+          sudo apt-get install -y pipewire-bin || true
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile || yarn install
+        shell: bash
+        run: |
+          yarn install --frozen-lockfile || yarn install
 
       - name: Build
         run: yarn build
