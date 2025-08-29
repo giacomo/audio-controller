@@ -1,4 +1,4 @@
-# audio-controller
+# @giacomo/audio-controller
 
 Cross-platform TypeScript library for controlling system speaker and microphone volume and mute state. Designed to be published to npm and usable in Electron apps (renderer via a secure preload bridge).
 
@@ -58,7 +58,7 @@ export default audio;
 Usage (ESM / CommonJS compatible):
 
 ```ts
-import audio from 'audio-controller';
+import audio from '@giacomo/audio-controller';
 
 const vol = await audio.speaker.get();
 await audio.speaker.set(50);
@@ -172,7 +172,7 @@ All methods are asynchronous and will reject with an Error on failure.
 ## TypeScript contract
 Recommended pattern: implement audio logic in a compiled Node module or in the main process, then expose a small, secure API to the renderer using a preload script and Electron's `contextBridge`.
 ```ts
-# audio-controller
+# @giacomo/audio-controller
 
 Small, cross-platform TypeScript library to read and change the system default speaker (output) and microphone (input) volume and mute state.
 
@@ -211,7 +211,7 @@ export default audio;
 Usage example (ESM):
 
 ```ts
-import audio from 'audio-controller';
+import audio from '@giacomo/audio-controller';
 
 const v = await audio.speaker.get(); // 0..100
 await audio.speaker.set(50);
