@@ -71,12 +71,18 @@ jobs:
 
       - name: Debug: list audio binaries
         run: |
-          echo "Which pactl:"; which pactl || true
-          echo "pactl --version:"; pactl --version || true
-          echo "Which amixer:"; which amixer || true
-          echo "amixer --version:"; amixer --version || true
-          echo "Which pw-cli:"; which pw-cli || true
-          echo "pw-cli --version:"; pw-cli --version || true
+          echo "Which pactl:"
+          command -v pactl || true
+          echo "pactl --version:"
+          pactl --version || true
+          echo "Which amixer:"
+          command -v amixer || true
+          echo "amixer --version:"
+          amixer --version || true
+          echo "Which pw-cli:"
+          command -v pw-cli || true
+          echo "pw-cli --version:"
+          pw-cli --version || true
         shell: bash
 
       - name: Run linux integration test
