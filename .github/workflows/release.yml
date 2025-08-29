@@ -94,7 +94,7 @@ jobs:
   release_upload:
     name: Package & upload prebuilds to GitHub Release
     runs-on: ubuntu-latest
-  if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
     needs: prebuild
     steps:
       - name: Download all prebuild artifacts
