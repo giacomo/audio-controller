@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node-version: [18, 20]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Enable Corepack and prepare Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@stable --activate
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile || yarn install
+
+      - name: Install pactl on Ubuntu
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          # Attempt to install pulseaudio-utils (pactl) and pipewire-utils as fallback
+          sudo apt-get install -y pulseaudio-utils pipewire-utils || true
+
+      - name: Build
+        run: yarn build
+
+      - name: Run unit tests
+        run: yarn unit
+
+      - name: Upload vitest coverage (if available)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-report
+          path: ./coverage || .
+
+  integration:
+    name: Integration tests (linux)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Enable Corepack and prepare Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@stable --activate
+
+      - name: Install pactl
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pulseaudio-utils pipewire-utils || true
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile || yarn install
+
+      - name: Build
+        run: yarn build
+
+      - name: Run linux integration test
+        run: npx vitest --run test/linux.integration.spec.ts

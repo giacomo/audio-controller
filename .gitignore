@@ -1,0 +1,74 @@
+# Gitignore for audio-controller (Node + TypeScript + native addons)
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+out/
+build/
+build/Release/
+build/Debug/
+**/build/Release/
+**/build/Debug/
+
+# Native binaries and prebuilds
+*.node
+prebuilds/
+prebuilds/**/*
+prebuild-install/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.*
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Vitest / test caches
+.vitest/
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Misc caches
+.cache/
+.parcel-cache/
+.cache-loader/
+
+# Package tarballs
+*.tgz
+
+# ESLint cache
+.eslintcache
+
+# npm lockfile (keep yarn.lock in repo, ignore package-lock.json if created accidentally)
+package-lock.json
+
+# Windows Subsystem for Linux
+.vagrant/
+
+# Optional: macOS extended attributes
+.AppleDouble
+.LSOverride
+
+# End of file

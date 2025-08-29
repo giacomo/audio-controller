@@ -1,0 +1,42 @@
+{
+  "name": "audio-controller",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Cross-platform Node.js library to read and control system speaker and microphone volume and mute state on Windows, macOS and Linux.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "native"
+  ],
+  "gypfile": true,
+  "scripts": {
+    "build": "node ./scripts/prebuild.cjs && tsc",
+    "rebuild": "node ./scripts/prebuild.cjs",
+    "rebuild:force": "node ./scripts/prebuild.cjs --force",
+    "postinstall": "node ./scripts/prebuild.cjs",
+    "clean": "node-gyp clean && rimraf dist",
+    "dev": "tsc --watch",
+    "example": "yarn build && node dist/example.js",
+    "examples": "yarn example",
+    "test": "yarn build && yarn unit",
+    "test:ci": "tsc --noEmit",
+    "gyp-rebuild": "node-gyp clean && node-gyp configure && node-gyp build",
+    "unit": "vitest --run"
+  },
+  "author": "Giacomo Barbalinardo<me@giacomo.dev>",
+  "license": "MIT",
+  "private": false,
+  "engines": {
+    "node": ">=14"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "node-addon-api": "^8.5.0",
+    "node-gyp": "^11.4.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "vitest": "^1.2.0",
+    "@types/jest": "^29.5.5"
+  }
+}
