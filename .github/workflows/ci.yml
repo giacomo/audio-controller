@@ -25,12 +25,12 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile || yarn install
 
-      - name: Install pactl on Ubuntu
+      - name: Install audio utilities on Ubuntu
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          # Attempt to install pulseaudio-utils (pactl) and pipewire-utils as fallback
-          sudo apt-get install -y pulseaudio-utils pipewire-utils || true
+          # Install pulseaudio-utils (pactl) and alsa-utils (amixer). pipewire-utils may also be available.
+          sudo apt-get install -y pulseaudio-utils alsa-utils pipewire-utils || true
 
       - name: Build
         run: yarn build
@@ -58,10 +58,10 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install pactl
+      - name: Install audio utilities
         run: |
           sudo apt-get update
-          sudo apt-get install -y pulseaudio-utils pipewire-utils || true
+          sudo apt-get install -y pulseaudio-utils alsa-utils pipewire-utils || true
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile || yarn install
