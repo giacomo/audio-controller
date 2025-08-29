@@ -69,7 +69,7 @@ jobs:
       - name: Build
         run: yarn build
 
-      - name: Debug: list audio binaries
+      - name: "Debug: list audio binaries"
         run: |
           echo "Which pactl:"
           command -v pactl || true
@@ -87,3 +87,4 @@ jobs:
 
       - name: Run linux integration test
         run: npx vitest --run test/linux.integration.spec.ts
+
