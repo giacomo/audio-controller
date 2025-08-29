@@ -69,5 +69,15 @@ jobs:
       - name: Build
         run: yarn build
 
+      - name: Debug: list audio binaries
+        run: |
+          echo "Which pactl:"; which pactl || true
+          echo "pactl --version:"; pactl --version || true
+          echo "Which amixer:"; which amixer || true
+          echo "amixer --version:"; amixer --version || true
+          echo "Which pw-cli:"; which pw-cli || true
+          echo "pw-cli --version:"; pw-cli --version || true
+        shell: bash
+
       - name: Run linux integration test
         run: npx vitest --run test/linux.integration.spec.ts
