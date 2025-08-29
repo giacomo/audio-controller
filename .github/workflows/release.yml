@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        node: [18, 20]
+        node: [20]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,8 +28,16 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
 
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile || yarn install
+      - name: Install dependencies (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          yarn install --frozen-lockfile || yarn install
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: yarn install
 
       - name: Run unit tests
         run: yarn unit
@@ -42,7 +50,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node: [18, 20]
+        node: [20]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,8 +61,16 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
 
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile || yarn install
+      - name: Install dependencies (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          yarn install --frozen-lockfile || yarn install
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: yarn install
 
       - name: Force rebuild native addon
         run: yarn rebuild:force
@@ -87,21 +103,23 @@ jobs:
         run: ls -R downloaded
 
       - name: Package artifacts
+        shell: bash
         run: |
           mkdir -p packaged
           for d in downloaded/*; do
             # each $d is a folder named like prebuild-... containing .node files
             name=$(basename "$d")
-            tar -C "$d" -czf "packaged/${name}.tar.gz" . || (zip -r "packaged/${name}.zip" . && true)
+            # Create a tar.gz of the folder contents
+            tar -C "$d" -czf "packaged/${name}.tar.gz" . || true
+            # Also create a zip as a fallback/alternative with identical contents
+            (cd "$d" && zip -r "${GITHUB_WORKSPACE}/packaged/${name}.zip" .) || true
           done
 
       - name: Upload packaged prebuilds to GitHub Release
-        uses: actions/upload-release-asset@v1
+        uses: softprops/action-gh-release@v2
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: packaged/
-          asset_name: packaged
-          asset_content_type: application/gzip
+          files: |
+            packaged/*
 
   publish-npm:
     name: Publish to npm (on release)
