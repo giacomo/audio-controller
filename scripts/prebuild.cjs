@@ -7,22 +7,22 @@ const { execSync } = require('child_process');
 const repoRoot = path.resolve(__dirname, '..');
 // Add common candidate locations for .node modules across platforms and build types
 const candidates = [
-  // Top-level build outputs
+  // Top-level build outputs (common names)
   path.join(repoRoot, 'build', 'Release', 'win_audio.node'),
   path.join(repoRoot, 'build', 'Debug', 'win_audio.node'),
+  path.join(repoRoot, 'build', 'Release', 'mac_audio.node'),
 
-  // Native subproject build outputs (Windows)
+  // Native subproject build outputs
   path.join(repoRoot, 'native', 'win-audio', 'build', 'Release', 'win_audio.node'),
   path.join(repoRoot, 'native', 'win-audio', 'build', 'Debug', 'win_audio.node'),
+  path.join(repoRoot, 'native', 'macos', 'build', 'Release', 'mac_audio.node'),
 
-  // macOS / Linux typical outputs (node addons are still .node files)
-  path.join(repoRoot, 'build', 'Release', 'win_audio.node'),
+  // Other possible names
   path.join(repoRoot, 'build', 'Release', 'libwin_audio.node'),
-  path.join(repoRoot, 'native', 'win-audio', 'build', 'Release', 'win_audio.node'),
-  path.join(repoRoot, 'native', 'win-audio', 'build', 'Release', 'libwin_audio.node'),
 
   // dist or packaged locations (sometimes built into package-specific folders)
   path.join(repoRoot, 'dist', 'native', 'win_audio.node'),
+  path.join(repoRoot, 'dist', 'native', 'mac_audio.node'),
 ];
 
 function existsAny(paths) {
@@ -35,6 +35,28 @@ function existsAny(paths) {
     if (fs.existsSync(distNative) && fs.statSync(distNative).isDirectory()) {
       const files = fs.readdirSync(distNative);
       if (files.some(f => f.endsWith('.node'))) return true;
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  // Also accept any .node in top-level build/Release or native/*/build/Release
+  try {
+    const buildRelease = path.join(repoRoot, 'build', 'Release');
+    if (fs.existsSync(buildRelease) && fs.statSync(buildRelease).isDirectory()) {
+      const files = fs.readdirSync(buildRelease);
+      if (files.some(f => f.endsWith('.node'))) return true;
+    }
+    const nativeDir = path.join(repoRoot, 'native');
+    if (fs.existsSync(nativeDir) && fs.statSync(nativeDir).isDirectory()) {
+      const subs = fs.readdirSync(nativeDir);
+      for (const s of subs) {
+        const d = path.join(nativeDir, s, 'build', 'Release');
+        if (fs.existsSync(d) && fs.statSync(d).isDirectory()) {
+          const files = fs.readdirSync(d);
+          if (files.some(f => f.endsWith('.node'))) return true;
+        }
+      }
     }
   } catch (e) {
     // ignore
@@ -58,26 +80,40 @@ try {
 
   console.log('Prebuild: running `node-gyp rebuild`...');
   execSync('node-gyp rebuild', { stdio: 'inherit' });
-  // After successful build, try to find the generated .node and copy it into dist/native
-  const outCandidates = [
-    path.join(repoRoot, 'build', 'Release', 'win_audio.node'),
-    path.join(repoRoot, 'native', 'win-audio', 'build', 'Release', 'win_audio.node'),
-  ];
+  // After successful build, try to find any generated .node and copy them into dist/native
+  const foundNodes = [];
+  try {
+    const top = path.join(repoRoot, 'build', 'Release');
+    if (fs.existsSync(top) && fs.statSync(top).isDirectory()) {
+      for (const f of fs.readdirSync(top)) if (f.endsWith('.node')) foundNodes.push(path.join(top, f));
+    }
 
-  const found = outCandidates.find(p => fs.existsSync(p));
-  if (found) {
+    const nativeDir = path.join(repoRoot, 'native');
+    if (fs.existsSync(nativeDir) && fs.statSync(nativeDir).isDirectory()) {
+      for (const s of fs.readdirSync(nativeDir)) {
+        const d = path.join(nativeDir, s, 'build', 'Release');
+        if (fs.existsSync(d) && fs.statSync(d).isDirectory()) {
+          for (const f of fs.readdirSync(d)) if (f.endsWith('.node')) foundNodes.push(path.join(d, f));
+        }
+      }
+    }
+  } catch (e) {
+    // ignore scan errors
+  }
+
+  if (foundNodes.length > 0) {
     const destDir = path.join(repoRoot, 'dist', 'native');
     fs.mkdirSync(destDir, { recursive: true });
-    const dest = path.join(destDir, path.basename(found));
-    try {
-      // copyFile with COPYFILE_FICLONE may create reflinks on some FS; use default copy to be safe
-      fs.copyFileSync(found, dest);
-      // ensure copied file has non-zero size
-      if (fs.existsSync(dest) && fs.statSync(dest).size > 0) {
-        console.log('Prebuild: copied native addon to', dest);
+    for (const found of foundNodes) {
+      const dest = path.join(destDir, path.basename(found));
+      try {
+        fs.copyFileSync(found, dest);
+        if (fs.existsSync(dest) && fs.statSync(dest).size > 0) {
+          console.log('Prebuild: copied native addon to', dest);
+        }
+      } catch (copyErr) {
+        console.warn('Prebuild: failed to copy built .node into dist/native:', copyErr.message || copyErr);
       }
-    } catch (copyErr) {
-      console.warn('Prebuild: failed to copy built .node into dist/native:', copyErr.message || copyErr);
     }
   }
 
