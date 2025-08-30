@@ -148,13 +148,26 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist/native
-          # Copy any .node files from downloaded artifacts into dist/native so prepublish finds them
+          # Copy each artifact's .node files into a platform-named subfolder to avoid overwrites
+          for d in downloaded/*; do
+            name=$(basename "$d")
+            mkdir -p "dist/native/$name"
+            for f in "$d"/*.node; do
+              if [ -f "$f" ]; then
+                cp -v "$f" "dist/native/$name/$(basename "$f")" || true
+              fi
+            done
+          done
+
+          # Also create prefixed copies at dist/native for backward compatibility
           for f in downloaded/*/*.node; do
             if [ -f "$f" ]; then
-              cp -v "$f" dist/native/ || true
+              artifact=$(basename "$(dirname \"$f\")")
+              cp -v "$f" "dist/native/${artifact}-$(basename \"$f\")" || true
             fi
           done
-          ls -l dist/native || true
+
+          ls -lR dist/native || true
 
       - name: Configure npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc

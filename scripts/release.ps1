@@ -116,7 +116,9 @@ if (Get-Command gh -ErrorAction SilentlyContinue) {
   gh release create $tagName --title $tagName --notes "Release $tagName"
   Write-Host "GitHub release created."
 } else {
-  Write-Warning "gh CLI not found. Tag pushed, but GitHub release was not created. Install and run: gh release create $tagName --title $tagName --notes \"Release $tagName\""
+  $cmd = "gh release create $tagName --title $tagName --notes 'Release $tagName'"
+  $msg = "gh CLI not found. Tag pushed, but GitHub release was not created. Install and run: $cmd"
+  Write-Warning $msg
 }
 
 Write-Host "Done."
