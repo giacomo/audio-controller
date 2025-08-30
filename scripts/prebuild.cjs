@@ -44,6 +44,29 @@ try {
 
   console.log('Prebuild: running `node-gyp rebuild`...');
   execSync('node-gyp rebuild', { stdio: 'inherit' });
+  // After successful build, try to find the generated .node and copy it into dist/native
+  const outCandidates = [
+    path.join(repoRoot, 'build', 'Release', 'win_audio.node'),
+    path.join(repoRoot, 'native', 'win-audio', 'build', 'Release', 'win_audio.node'),
+  ];
+
+  const found = outCandidates.find(p => fs.existsSync(p));
+  if (found) {
+    const destDir = path.join(repoRoot, 'dist', 'native');
+    fs.mkdirSync(destDir, { recursive: true });
+    const dest = path.join(destDir, path.basename(found));
+    try {
+      // copyFile with COPYFILE_FICLONE may create reflinks on some FS; use default copy to be safe
+      fs.copyFileSync(found, dest);
+      // ensure copied file has non-zero size
+      if (fs.existsSync(dest) && fs.statSync(dest).size > 0) {
+        console.log('Prebuild: copied native addon to', dest);
+      }
+    } catch (copyErr) {
+      console.warn('Prebuild: failed to copy built .node into dist/native:', copyErr.message || copyErr);
+    }
+  }
+
   process.exit(0);
 } catch (err) {
   console.error('Prebuild: failed to build native addon:', err.message || err);
