@@ -1,6 +1,6 @@
 {
   "name": "audio-controller-mos",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "type": "module",
   "description": "Cross-platform Node.js library to read and control system speaker and microphone volume and mute state on Windows, macOS and Linux.",
   "main": "dist/index.js",
