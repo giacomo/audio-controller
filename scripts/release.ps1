@@ -92,7 +92,8 @@ Write-Host "On branch: $branch"
 
 Run-Git 'add' 'package.json'
 try {
-  Run-Git 'commit' '-m' "chore(release): v$new"
+  # Append [ci skip] to avoid triggering CI jobs for the automated release commit
+  Run-Git 'commit' '-m' "chore(release): v$new [ci skip]"
 } catch {
   # If commit fails because nothing changed, continue
   if ($_.Exception.Message -match 'nothing to commit') {

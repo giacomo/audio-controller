@@ -6,8 +6,13 @@ on:
   pull_request:
     branches: [ main, master ]
 
+# Skip CI for commits that explicitly request it (the release script adds [ci skip])
+env:
+  SKIP_CI_MARKER: '[ci skip]'
+
 jobs:
   test:
+    if: ${{ github.event.head_commit != null && !contains(github.event.head_commit.message, env.SKIP_CI_MARKER) }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -59,7 +64,7 @@ jobs:
   integration:
     name: Integration tests (linux)
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+    if: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && (github.event.head_commit == null || !contains(github.event.head_commit.message, env.SKIP_CI_MARKER)) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
