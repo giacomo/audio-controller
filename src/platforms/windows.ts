@@ -22,6 +22,19 @@ if ((globalThis as any).__WIN_AUDIO_NATIVE) {
     path.join(__dirname, '..', '..', 'build', 'Release', 'win_audio.node'),
     path.join(__dirname, '..', '..', 'native', 'win-audio', 'build', 'Release', 'win_audio.node'),
     path.join(__dirname, '..', '..', 'native', 'win-audio', 'build', 'Debug', 'win_audio.node'),
+    // Also accept any .node placed into dist/native (published package)
+    ...(() => {
+      try {
+        const d = path.join(__dirname, '..', '..', 'dist', 'native');
+        if (fs.existsSync(d) && fs.statSync(d).isDirectory()) {
+          const files = fs.readdirSync(d).filter(f => f.endsWith('.node'));
+          return files.map(f => path.join(d, f));
+        }
+      } catch (e) {
+        // ignore
+      }
+      return [] as string[];
+    })(),
   ];
 
   for (const p of candidates) {
