@@ -1,8 +1,16 @@
-# @giacomo/audio-controller
+# audio-controller-mos
 
 Cross-platform TypeScript library for controlling system speaker and microphone volume and mute state. Designed to be published to npm and usable in Electron apps (renderer via a secure preload bridge).
 
 This README documents the public API, TypeScript contract, implementation strategies per platform (Windows / macOS / Linux), Electron integration notes, dev setup using yarn + TypeScript, tests and publishing guidance.
+
+## Tested Systems (so far)
+
+| System OS             | Status |
+|-----------------------|--------|
+| Windows 11            | yes    |
+| Raspberry Pi Zero 2W  | yes    |
+
 
 ## Goals / Requirements
 
@@ -58,7 +66,7 @@ export default audio;
 Usage (ESM / CommonJS compatible):
 
 ```ts
-import audio from '@giacomo/audio-controller';
+import audio from 'audio-controller-mos';
 
 const vol = await audio.speaker.get();
 await audio.speaker.set(50);
@@ -109,6 +117,35 @@ Below are practical examples per-OS to guide an implementation. Use these as sta
 
 Notes: many modern distros use PipeWire which provides the same `pactl` interface. Ensure `pactl` is available or detect and fail with a helpful message.
 
+#### Raspberry Pi / Debian notes
+
+On Raspberry Pi OS / Debian the recommended approach is to install PipeWire (with the PulseAudio compatibility layer) so `pactl` works reliably. Example commands:
+
+```bash
+sudo apt update
+sudo apt install -y pipewire pipewire-pulse wireplumber
+
+# enable and start the user services (run as the same user you run your app as)
+systemctl --user daemon-reload
+systemctl --user enable --now pipewire pipewire-pulse wireplumber
+
+# verify the server is reachable
+pactl info
+```
+
+If you prefer PulseAudio (classic) you can install it instead:
+
+```bash
+sudo apt update
+sudo apt install -y pulseaudio
+pulseaudio --start
+pactl info
+```
+
+Notes:
+- If `pactl info` returns "Connection refused" the user audio service is not running or not reachable; ensure `XDG_RUNTIME_DIR` is set to `/run/user/$(id -u)` for the user session (this is commonly an issue over non-login SSH sessions).
+- On systems without a running PipeWire/PulseAudio server the library falls back to `amixer` (ALSA). Use `amixer scontrols` / `amixer controls` to inspect available ALSA control names and map them as needed.
+
 ### macOS (CoreAudio)
 
 - Speaker (output)
@@ -124,7 +161,7 @@ Notes: For macOS mic control you will likely need a native module or helper app.
 
 #### macOS native addon (microphone)
 
-This repository includes a prototype native addon at `native/macos/mic_audio.mm` and a `binding.gyp` under `native/macos/` that builds the `mac_audio` addon.
+This repository includes a prototype native addon at `native/macos/mac_audio.mm` and a `binding.gyp` under `native/macos/` that builds the `mac_audio` addon.
 
 Build instructions (macOS machine):
 
@@ -172,7 +209,7 @@ All methods are asynchronous and will reject with an Error on failure.
 ## TypeScript contract
 Recommended pattern: implement audio logic in a compiled Node module or in the main process, then expose a small, secure API to the renderer using a preload script and Electron's `contextBridge`.
 ```ts
-# @giacomo/audio-controller
+# audio-controller-mos
 
 Small, cross-platform TypeScript library to read and change the system default speaker (output) and microphone (input) volume and mute state.
 
@@ -211,7 +248,7 @@ export default audio;
 Usage example (ESM):
 
 ```ts
-import audio from '@giacomo/audio-controller';
+import audio from 'audio-controller-mos';
 
 const v = await audio.speaker.get(); // 0..100
 await audio.speaker.set(50);
@@ -323,7 +360,7 @@ The example below shows a short script that demonstrates speaker/mic control in 
 Note: run this on a real machine (not in unit tests) and ensure you have the required permissions and backends for your OS.
 
 ```ts
-import audio from 'audio-controller';
+import audio from 'audio-controller-mos';
 
 function wait(ms: number) {
   return new Promise<void>(res => setTimeout(res, ms));
