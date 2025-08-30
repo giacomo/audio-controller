@@ -60,8 +60,12 @@ if ($version -ne '') {
 Write-Host "Current version: $current -> New version: $new"
 
 # Check working tree clean
-$porcelain = (git status --porcelain)
-if ($porcelain.Trim() -ne '') {
+# Capture git porcelain output safely (can be null if git returns nothing)
+$porcelainObj = & git status --porcelain 2>$null
+$porcelain = ''
+if ($porcelainObj) { $porcelain = $porcelainObj -join "`n" }
+
+if ($porcelain.ToString().Trim() -ne '') {
   if ($stageAll) {
   Write-Host "Staging all changes as requested by -stageAll..."
   Run-Git 'add' '-A'
