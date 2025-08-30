@@ -95,11 +95,32 @@ jobs:
             (cd "$d" && zip -r "${GITHUB_WORKSPACE}/packaged/${name}.zip" .) || true
           done
 
+      - name: Validate macOS packaged artifact contains mac_audio.node
+        shell: bash
+        run: |
+          set -euo pipefail
+          ok=0
+          for f in packaged/*macos*; do
+            if [ -f "$f" ]; then
+              echo "Checking $f for mac_audio.node"
+              if [[ "$f" == *.tar.gz ]]; then
+                if tar -tzf "$f" | grep -q "mac_audio.node"; then ok=1; fi
+              elif [[ "$f" == *.zip ]]; then
+                if unzip -l "$f" | awk '{print $4}' | grep -q "mac_audio.node"; then ok=1; fi
+              fi
+            fi
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "ERROR: no mac_audio.node found inside macOS packaged artifacts. Aborting release upload." >&2
+            exit 1
+          fi
+
       - name: Upload packaged prebuilds to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             packaged/*
+          tag_name: ${{ github.event.inputs.tag }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
