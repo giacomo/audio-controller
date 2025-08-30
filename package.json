@@ -1,6 +1,6 @@
 {
   "name": "audio-controller-mos",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "type": "module",
   "description": "Cross-platform Node.js library to read and control system speaker and microphone volume and mute state on Windows, macOS and Linux.",
   "main": "dist/index.js",
@@ -19,7 +19,7 @@
     "prepublishOnly": "node ./scripts/prebuild.cjs && tsc",
     "rebuild": "node ./scripts/prebuild.cjs",
     "rebuild:force": "node ./scripts/prebuild.cjs --force",
-  "postinstall": "node -e \"try{require('./scripts/prebuild.cjs')}catch(e){process.exit(0)}\"",
+    "postinstall": "node -e \"try{require('./scripts/prebuild.cjs')}catch(e){process.exit(0)}\"",
     "clean": "node-gyp clean && rimraf dist",
     "dev": "tsc --watch",
     "example": "yarn build && node dist/example.js",
