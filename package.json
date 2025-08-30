@@ -7,7 +7,8 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist",
-    "native"
+    "native",
+    "build"
   ],
   "publishConfig": {
     "access": "public"
@@ -15,6 +16,7 @@
   "gypfile": true,
   "scripts": {
     "build": "node ./scripts/prebuild.cjs && tsc",
+    "prepublishOnly": "node ./scripts/prebuild.cjs && tsc",
     "rebuild": "node ./scripts/prebuild.cjs",
     "rebuild:force": "node ./scripts/prebuild.cjs --force",
     "postinstall": "node ./scripts/prebuild.cjs",
