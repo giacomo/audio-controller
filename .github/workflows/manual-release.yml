@@ -1,0 +1,156 @@
+name: Manual Release: Rebuild Prebuilds & Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'The release tag to upload prebuilds to (e.g. v1.2.0)'
+        required: true
+      publish_npm:
+        description: 'Publish to npm after uploading prebuilds'
+        required: false
+        default: 'true'
+
+permissions:
+  contents: write
+
+jobs:
+  prebuild:
+    name: Build prebuilds (manual)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [22]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+
+      - name: Install dependencies (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          yarn install --frozen-lockfile || yarn install
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: yarn install
+
+      - name: Force rebuild native addon (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          yarn rebuild:force
+
+      - name: Force rebuild native addon (Unix + macOS extra)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          yarn rebuild:force
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            echo "Detected macOS runner — building native/macos mac_audio target"
+            (cd native/macos && node-gyp rebuild) || true
+          fi
+
+      - name: Prepare artifact directory
+        run: |
+          mkdir -p artifacts
+          if [ -d build/Release ]; then cp -v build/Release/*.node artifacts/ || true; fi
+        shell: bash
+
+      - name: Upload prebuild artifact (per-job)
+        uses: actions/upload-artifact@v4
+        with:
+          name: prebuild-${{ matrix.os }}-node${{ matrix.node }}
+          path: artifacts/
+
+  release_upload:
+    name: Package & upload prebuilds to GitHub Release
+    runs-on: ubuntu-latest
+    needs: prebuild
+    steps:
+      - name: Download all prebuild artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded
+
+      - name: List downloaded content
+        run: ls -R downloaded
+
+      - name: Package artifacts
+        shell: bash
+        run: |
+          mkdir -p packaged
+          for d in downloaded/*; do
+            name=$(basename "$d")
+            tar -C "$d" -czf "packaged/${name}.tar.gz" . || true
+            (cd "$d" && zip -r "${GITHUB_WORKSPACE}/packaged/${name}.zip" .) || true
+          done
+
+      - name: Upload packaged prebuilds to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            packaged/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-npm:
+    name: Publish to npm (manual)
+    runs-on: ubuntu-latest
+    needs: release_upload
+    if: ${{ github.event.inputs.publish_npm == 'true' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download prebuild artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded
+
+      - name: Restore prebuilt native modules
+        shell: bash
+        run: |
+          mkdir -p dist/native
+          for d in downloaded/*; do
+            name=$(basename "$d")
+            mkdir -p "dist/native/$name"
+            for f in "$d"/*.node; do
+              if [ -f "$f" ]; then
+                base=$(basename "$f")
+                cp -v "$f" "dist/native/$name/$base" || true
+              fi
+            done
+          done
+
+          for f in downloaded/*/*.node; do
+            if [ -f "$f" ]; then
+              artifact=$(basename "$(dirname "$f")")
+              base=$(basename "$f")
+              cp -v "$f" "dist/native/${artifact}-$base" || true
+            fi
+          done
+
+          ls -lR dist/native || true
+
+      - name: Configure npm auth
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      - name: Install & build
+        run: |
+          yarn install --frozen-lockfile || yarn install
+          yarn build
+
+      - name: Publish package
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
