@@ -26,7 +26,21 @@ const candidates = [
 ];
 
 function existsAny(paths) {
-  return paths.some(p => fs.existsSync(p));
+  // Return true if any explicit candidate exists
+  if (paths.some(p => fs.existsSync(p))) return true;
+
+  // Additionally, accept any .node file inside dist/native (handles prefixed or platform-specific names)
+  try {
+    const distNative = path.join(repoRoot, 'dist', 'native');
+    if (fs.existsSync(distNative) && fs.statSync(distNative).isDirectory()) {
+      const files = fs.readdirSync(distNative);
+      if (files.some(f => f.endsWith('.node'))) return true;
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  return false;
 }
 
 try {
