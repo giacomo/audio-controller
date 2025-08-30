@@ -7,7 +7,8 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist",
-    "native"
+    "native",
+    "scripts"
   ],
   "publishConfig": {
     "access": "public"
@@ -18,7 +19,7 @@
     "prepublishOnly": "node ./scripts/prebuild.cjs && tsc",
     "rebuild": "node ./scripts/prebuild.cjs",
     "rebuild:force": "node ./scripts/prebuild.cjs --force",
-    "postinstall": "node ./scripts/prebuild.cjs",
+  "postinstall": "node -e \"try{require('./scripts/prebuild.cjs')}catch(e){process.exit(0)}\"",
     "clean": "node-gyp clean && rimraf dist",
     "dev": "tsc --watch",
     "example": "yarn build && node dist/example.js",
