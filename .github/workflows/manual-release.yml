@@ -87,9 +87,9 @@ jobs:
 
   release_upload:
     name: Package & upload prebuilds to GitHub Release
-  if: ${{ github.event.inputs.dry_run != 'true' }}
-  runs-on: ubuntu-latest
-  needs: prebuild
+    if: ${{ github.event.inputs.dry_run != 'true' }}
+    runs-on: ubuntu-latest
+    needs: prebuild
     steps:
       - name: Download all prebuild artifacts
         uses: actions/download-artifact@v4
