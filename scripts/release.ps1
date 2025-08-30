@@ -86,9 +86,9 @@ $pkg | ConvertTo-Json -Depth 20 | Out-File -FilePath $pkgPath -Encoding UTF8
 $branch = (git rev-parse --abbrev-ref HEAD).Trim()
 Write-Host "On branch: $branch"
 
-Run-Git add package.json
+Run-Git 'add' 'package.json'
 try {
-  Run-Git commit -m "chore(release): v$new"
+  Run-Git 'commit' '-m' "chore(release): v$new"
 } catch {
   # If commit fails because nothing changed, continue
   if ($_.Exception.Message -match 'nothing to commit') {
@@ -104,11 +104,11 @@ $existingTag = git tag --list $tagName
 if ($existingTag) {
   ExitWith "Tag $tagName already exists. Aborting."
 }
-Run-Git tag -a $tagName -m "Release $tagName"
+Run-Git 'tag' '-a' $tagName '-m' "Release $tagName"
 
 # Push branch and tag
-Run-Git push origin $branch
-Run-Git push origin $tagName
+Run-Git 'push' 'origin' $branch
+Run-Git 'push' 'origin' $tagName
 
 # Create GitHub release with gh (if available)
 if (Get-Command gh -ErrorAction SilentlyContinue) {
