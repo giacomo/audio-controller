@@ -29,8 +29,11 @@ if (platform === 'win32') {
 } else if (platform === 'darwin') {
   const mac = await import('./platforms/macos.js');
   audio = { speaker: mac.speaker, mic: mac.mic } as AudioController;
+} else if (platform === 'linux') {
+  const linux = await import('./platforms/linux.js');
+  audio = { speaker: linux.speaker, mic: linux.mic } as AudioController;
 } else {
-  // Placeholder for other non-implemented platforms (e.g., linux)
+  // Placeholder for other non-implemented platforms
   const notImpl = () => Promise.reject(new Error('Not implemented on this platform'));
   const device: DeviceControl = {
     get: notImpl as any,
