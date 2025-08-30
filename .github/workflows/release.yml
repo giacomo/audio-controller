@@ -139,6 +139,23 @@ jobs:
           node-version: 18
           registry-url: 'https://registry.npmjs.org/'
 
+      - name: Download prebuild artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded
+
+      - name: Restore prebuilt native modules
+        shell: bash
+        run: |
+          mkdir -p dist/native
+          # Copy any .node files from downloaded artifacts into dist/native so prepublish finds them
+          for f in downloaded/*/*.node; do
+            if [ -f "$f" ]; then
+              cp -v "$f" dist/native/ || true
+            fi
+          done
+          ls -l dist/native || true
+
       - name: Configure npm auth
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
 
