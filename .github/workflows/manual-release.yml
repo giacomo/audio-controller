@@ -64,7 +64,15 @@ jobs:
       - name: Prepare artifact directory
         run: |
           mkdir -p artifacts
+          # copy top-level build outputs
           if [ -d build/Release ]; then cp -v build/Release/*.node artifacts/ || true; fi
+          # also copy any native subproject outputs (e.g. native/macos/build/Release/*.node)
+          for d in native/*/build/Release; do
+            if [ -d "$d" ]; then
+              cp -v "$d"/*.node artifacts/ || true
+            fi
+          done
+          ls -l artifacts || true
         shell: bash
 
       - name: Upload prebuild artifact (per-job)
