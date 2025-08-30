@@ -154,7 +154,8 @@ jobs:
             mkdir -p "dist/native/$name"
             for f in "$d"/*.node; do
               if [ -f "$f" ]; then
-                cp -v "$f" "dist/native/$name/$(basename "$f")" || true
+                base=$(basename "$f")
+                cp -v "$f" "dist/native/$name/$base" || true
               fi
             done
           done
@@ -162,8 +163,9 @@ jobs:
           # Also create prefixed copies at dist/native for backward compatibility
           for f in downloaded/*/*.node; do
             if [ -f "$f" ]; then
-              artifact=$(basename "$(dirname \"$f\")")
-              cp -v "$f" "dist/native/${artifact}-$(basename \"$f\")" || true
+              artifact=$(basename "$(dirname "$f")")
+              base=$(basename "$f")
+              cp -v "$f" "dist/native/${artifact}-$base" || true
             fi
           done
 
