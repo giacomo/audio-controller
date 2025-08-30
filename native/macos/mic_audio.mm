@@ -139,14 +139,14 @@ Value IsMicMuted(const CallbackInfo &info) {
   AudioDeviceID dev = GetDefaultInputDevice(err);
   if (err != noErr) {
     Error::New(env, "Failed to get default input device: " + HResultToString(err)).ThrowAsJavaScriptException();
-    return Boolean::New(env, false);
+    return Napi::Boolean::New(env, false);
   }
   UInt32 muted = 0;
   if (!GetDeviceMute(dev, muted)) {
     Error::New(env, "Failed to get mute state").ThrowAsJavaScriptException();
-    return Boolean::New(env, false);
+    return Napi::Boolean::New(env, false);
   }
-  return Boolean::New(env, muted != 0);
+  return Napi::Boolean::New(env, muted != 0);
 }
 
 Object Init(Env env, Object exports) {
