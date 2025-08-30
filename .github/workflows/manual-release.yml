@@ -57,7 +57,8 @@ jobs:
           yarn rebuild:force
           if [ "$RUNNER_OS" = "macOS" ]; then
             echo "Detected macOS runner — building native/macos mac_audio target"
-            (cd native/macos && node-gyp rebuild) || true
+            # Use npx so the locally installed node-gyp in node_modules/.bin is found
+            (cd native/macos && npx node-gyp rebuild) || true
           fi
 
       - name: Prepare artifact directory
