@@ -75,8 +75,25 @@ jobs:
         shell: pwsh
         run: yarn install
 
-      - name: Force rebuild native addon
-        run: yarn rebuild:force
+      - name: Force rebuild native addon (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # Keep existing Windows behavior
+          yarn rebuild:force
+
+      - name: Force rebuild native addon (Unix + macOS extra)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          # Run the existing rebuild which covers top-level binding.gyp
+          yarn rebuild:force
+          # On macOS, also build the mac_audio addon found under native/macos
+          # so the produced artifact will include build/Release/mac_audio.node
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            echo "Detected macOS runner — building native/macos mac_audio target"
+            (cd native/macos && node-gyp rebuild) || true
+          fi
 
       - name: Prepare artifact directory
         run: |

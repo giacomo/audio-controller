@@ -1,5 +1,8 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import path from 'path';
+import fs from 'fs';
+import { createRequire } from 'module';
 
 const execP = promisify(exec);
 
@@ -51,15 +54,36 @@ const speaker = {
     native = (globalThis as any).__MAC_AUDIO_NATIVE;
   } else {
     try {
-      // prefer top-level build output
-      native = require('../../build/Release/mac_audio.node');
-    } catch (_) {
-      try {
-        native = require('bindings')('mac_audio');
+        // prefer top-level build output
+        native = require('../../build/Release/mac_audio.node');
       } catch (_) {
-        native = null;
+        // Try any .node inside dist/native (published prebuilds)
+        try {
+          const req = createRequire(import.meta.url);
+          const d = path.join(__dirname, '..', '..', 'dist', 'native');
+          if (fs.existsSync(d) && fs.statSync(d).isDirectory()) {
+            const files = fs.readdirSync(d).filter(f => f.endsWith('.node'));
+            for (const f of files) {
+              try {
+                native = req(path.join(d, f));
+                if (native) break;
+              } catch (e) {
+                // ignore and try next
+              }
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+
+        if (!native) {
+          try {
+            native = require('bindings')('mac_audio');
+          } catch (_) {
+            native = null;
+          }
+        }
       }
-    }
   }
 
 const mic = native
