@@ -76,17 +76,28 @@ jobs:
   integration:
     name: Integration tests (linux)
     runs-on: ubuntu-latest
-    if: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && (github.event.head_commit == null || !contains(github.event.head_commit.message, env.SKIP_CI_MARKER)) }}
     steps:
+      - name: Check for CI skip marker
+        id: skip_check
+        run: |
+          if [[ "${{ github.event.head_commit.message }}" == *"[ci skip]"* ]]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Checkout
+        if: steps.skip_check.outputs.skip == 'false'
         uses: actions/checkout@v4
 
       - name: Setup Node.js
+        if: steps.skip_check.outputs.skip == 'false'
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
       - name: Install audio utilities
+        if: steps.skip_check.outputs.skip == 'false'
         run: |
           sudo apt-get update
           # Install each package separately so one missing package doesn't fail the whole command.
@@ -95,14 +106,17 @@ jobs:
           sudo apt-get install -y pipewire-bin || true
 
       - name: Install dependencies
+        if: steps.skip_check.outputs.skip == 'false'
         shell: bash
         run: |
           yarn install --frozen-lockfile || yarn install
 
       - name: Build
+        if: steps.skip_check.outputs.skip == 'false'
         run: yarn build
 
       - name: "Debug: list audio binaries"
+        if: steps.skip_check.outputs.skip == 'false'
         run: |
           echo "Which pactl:"
           command -v pactl || true
@@ -119,5 +133,6 @@ jobs:
         shell: bash
 
       - name: Run linux integration test
+        if: steps.skip_check.outputs.skip == 'false'
         run: npx vitest --run test/linux.integration.spec.ts
 
