@@ -12,34 +12,44 @@ env:
 
 jobs:
   test:
-    if: ${{ github.event.head_commit != null && !contains(github.event.head_commit.message, env.SKIP_CI_MARKER) }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
         node-version: [22]
     steps:
+      - name: Check for CI skip marker
+        id: skip_check
+        run: |
+          if [[ "${{ github.event.head_commit.message }}" == *"[ci skip]"* ]]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Checkout
+        if: steps.skip_check.outputs.skip == 'false'
         uses: actions/checkout@v4
 
       - name: Setup Node.js
+        if: steps.skip_check.outputs.skip == 'false'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
 
       - name: Install dependencies
-        if: runner.os != 'Windows'
+        if: steps.skip_check.outputs.skip == 'false' && runner.os != 'Windows'
         shell: bash
         run: |
           yarn install --frozen-lockfile || yarn install
 
       - name: Install dependencies (Windows)
-        if: runner.os == 'Windows'
+        if: steps.skip_check.outputs.skip == 'false' && runner.os == 'Windows'
         shell: pwsh
         run: yarn install
 
       - name: Install audio utilities on Ubuntu
-        if: runner.os == 'Linux'
+        if: steps.skip_check.outputs.skip == 'false' && runner.os == 'Linux'
         run: |
           sudo apt-get update
           # Install pulseaudio-utils (pactl) and alsa-utils (amixer). Attempt pipewire-bin (pw-cli) optionally.
@@ -49,9 +59,11 @@ jobs:
           sudo apt-get install -y pipewire-bin || true
 
       - name: Build
+        if: steps.skip_check.outputs.skip == 'false'
         run: yarn build
 
       - name: Run unit tests
+        if: steps.skip_check.outputs.skip == 'false'
         run: yarn unit
 
       - name: Upload vitest coverage (if available)
