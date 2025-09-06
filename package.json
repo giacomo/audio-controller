@@ -32,6 +32,10 @@
   "author": "Giacomo Barbalinardo<me@giacomo.dev>",
   "license": "MIT",
   "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/giacomo/audio-controller.git"
+  },
   "engines": {
     "node": ">=14"
   },
