@@ -18,14 +18,27 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         node-version: [22]
     steps:
-      - name: Check for CI skip marker
+      - name: Check for CI skip marker (Linux)
+        if: runner.os == 'Linux'
         id: skip_check
+        shell: bash
         run: |
           if [[ "${{ github.event.head_commit.message }}" == *"[ci skip]"* ]]; then
             echo "skip=true" >> $GITHUB_OUTPUT
           else
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
+
+      - name: Check for CI skip marker (Windows)
+        if: runner.os == 'Windows'
+        id: skip_check
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_EVENT_HEAD_COMMIT_MESSAGE -like '*[ci skip]*') {
+            echo "skip=true" >> $env:GITHUB_OUTPUT
+          } else {
+            echo "skip=false" >> $env:GITHUB_OUTPUT
+          }
 
       - name: Checkout
         if: steps.skip_check.outputs.skip == 'false'
